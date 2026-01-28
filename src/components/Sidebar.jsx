@@ -1,78 +1,80 @@
-import React from 'react';
-import StoriesBar from './StoriesBar';
+import React, { useState } from 'react';
 
 const Sidebar = ({
     contacts,
     activeContact,
     onSelectContact,
     currentUser,
-    onLogout,
-    onShowProfile,
     onNewChat,
-    onSelectStory,
-    onUploadStory,
     mutedContacts = [],
     blockedContacts = []
 }) => {
+    const [activeFilter, setActiveFilter] = useState('All');
+    const filters = ['All', 'Unread', 'Favourites', 'Groups'];
+
     return (
-        <aside className="sidebar glass">
-            <header className="sidebar-header">
-                <h2>Wetalk</h2>
-                <button className="new-chat-btn" onClick={onNewChat} title="New Chat">+</button>
+        <aside className="sidebar-chat-list">
+            <header className="sidebar-header-wa">
+                <div className="header-title-row">
+                    <h2>Chats</h2>
+                    <div className="header-actions">
+                        <button className="icon-btn-wa" onClick={onNewChat} title="New Chat">
+                            <span className="wa-icon">📝</span>
+                        </button>
+                        <button className="icon-btn-wa" title="Menu">
+                            <span className="wa-icon">⋮</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div className="search-container-wa">
+                    <div className="search-bar-wa">
+                        <span className="search-icon-wa">🔍</span>
+                        <input type="text" placeholder="Search or start a new chat" />
+                    </div>
+                </div>
+
+                <div className="filter-pills-wa">
+                    {filters.map(filter => (
+                        <button
+                            key={filter}
+                            className={`filter-pill ${activeFilter === filter ? 'active' : ''}`}
+                            onClick={() => setActiveFilter(filter)}
+                        >
+                            {filter}
+                        </button>
+                    ))}
+                </div>
             </header>
-            <div className="search-bar">
-                <input type="text" placeholder="Search conversations..." />
-            </div>
 
-            <StoriesBar
-                currentUser={currentUser}
-                onStorySelect={onSelectStory}
-                onUploadClick={onUploadStory}
-            />
-
-            <nav className="contact-list">
+            <nav className="contact-list-wa custom-scrollbar">
                 {contacts.map((contact) => (
                     <div
                         key={contact.id}
-                        className={`contact-item ${activeContact?.id === contact.id ? 'active' : ''} ${blockedContacts.includes(contact.id) ? 'blocked' : ''}`}
+                        className={`contact-item-wa ${activeContact?.id === contact.id ? 'active' : ''} ${blockedContacts.includes(contact.id) ? 'blocked' : ''}`}
                         onClick={() => onSelectContact(contact)}
                     >
-                        <div className="avatar">
+                        <div className="avatar-wa">
                             {contact.avatar}
-                            {mutedContacts.includes(contact.id) && <span className="mute-indicator">🔕</span>}
+                            {mutedContacts.includes(contact.id) && <span className="mute-indicator-wa">🔕</span>}
                         </div>
-                        <div className="contact-info">
-                            <span className="contact-name">
-                                {contact.name}
-                                {blockedContacts.includes(contact.id) && <span className="blocked-tag">Blocked</span>}
-                            </span>
-                            <span className="last-message">
-                                {blockedContacts.includes(contact.id) ? "Contact blocked" : contact.lastMessage}
-                            </span>
+                        <div className="contact-content-wa">
+                            <div className="contact-top-row">
+                                <span className="contact-name-wa">{contact.name}</span>
+                                <span className="contact-time-wa">{contact.time}</span>
+                            </div>
+                            <div className="contact-bottom-row">
+                                <span className="contact-message-wa">
+                                    {blockedContacts.includes(contact.id) ? "Contact blocked" : contact.lastMessage}
+                                </span>
+                                {contact.unread > 0 && (
+                                    <span className="unread-badge-wa">{contact.unread}</span>
+                                )}
+                            </div>
                         </div>
-                        <span className="time">{contact.time}</span>
                     </div>
                 ))}
             </nav>
-
-            <div className="sidebar-footer glass">
-                <div className="user-profile" onClick={onShowProfile} style={{ cursor: 'pointer' }}>
-                    <div className="avatar">
-                        {currentUser?.profilePic ? (
-                            <img src={currentUser.profilePic} alt="Profile" style={{ width: '100%', height: '100%', borderRadius: 'inherit', objectFit: 'cover' }} />
-                        ) : (
-                            currentUser?.firstName?.substring(0, 2).toUpperCase() || currentUser?.username?.substring(0, 2).toUpperCase()
-                        )}
-                    </div>
-                    <div className="user-info">
-                        <span className="user-name">{currentUser?.firstName || currentUser?.username}</span>
-                        <span className="user-status">Settings</span>
-                    </div>
-                </div>
-                <button className="icon-btn logout-btn" onClick={onLogout} title="Logout">
-                    ⏻
-                </button>
-            </div>
         </aside>
     );
 };

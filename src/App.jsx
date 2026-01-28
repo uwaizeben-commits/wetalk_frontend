@@ -10,6 +10,7 @@ import CallInterface from './components/CallInterface'
 import AddContactModal from './components/AddContactModal'
 import Recovery from './components/Auth/Recovery'
 import StoryViewer from './components/StoryViewer'
+import NavRail from './components/NavRail'
 import './App.css'
 
 const socket = io('http://127.0.0.1:3001')
@@ -34,21 +35,18 @@ function App() {
   const [mobileView, setMobileView] = useState('list') // 'list' or 'chat'
 
   const [contacts, setContacts] = useState([
-    { id: 1, name: 'John Doe', avatar: 'JD', lastMessage: 'Hey, how\'s it going?', time: '12:45 PM', phone: '+1 555-0101', bio: 'Living the dream!' },
-    { id: 2, name: 'Alice Smith', avatar: 'AS', lastMessage: 'See you tomorrow!', time: '10:30 AM', phone: '+1 555-0102', bio: 'Designer & Dreamer' },
+    { id: 1, name: 'OVER_NKEM❤️❤️🌹', avatar: 'ON', lastMessage: 'You don Dey come?', time: '04:17', unread: 0 },
+    { id: 2, name: 'Ksolo', avatar: 'KS', lastMessage: '📞 Missed voice call', time: 'Monday', unread: 10 },
+    { id: 3, name: 'Mucm❤️❤️', avatar: 'MC', lastMessage: '✓ Good morning uncle Chris.', time: 'Yesterday', unread: 0 },
+    { id: 4, name: 'NARVIK GMC SOFTWARE DEV.', avatar: 'NG', lastMessage: '~ JOJOMIWA: Onto the Next Great ...', time: '04:24', unread: 4 },
   ])
 
-  const [activeContact, setActiveContact] = useState(contacts[0])
+  const [activeContact, setActiveContact] = useState(null) // Start null for empty view
+  const [activeTab, setActiveTab] = useState('chats')
 
   const [messages, setMessages] = useState({
-    1: [
-      { sender: 'other', text: 'Hey, how\'s it going?', time: '12:45 PM' },
-      { sender: 'me', text: 'Hi John! All good, just working on the new chat app. You?', time: '12:46 PM' },
-      { sender: 'other', text: 'That sounds awesome! Can\'t wait to see it. 🚀', time: '12:47 PM' },
-    ],
-    2: [
-      { sender: 'other', text: 'See you tomorrow!', time: '10:30 AM' }
-    ]
+    1: [{ sender: 'other', text: 'You don Dey come?', time: '04:17' }],
+    2: [{ sender: 'other', text: 'Missed voice call', time: 'Monday' }],
   })
 
   useEffect(() => {
@@ -56,19 +54,22 @@ function App() {
     window.addEventListener('resize', handleResize)
 
     socket.on('receive_message', (data) => {
-      setMessages((prev) => ({
-        ...prev,
-        [activeContact.id]: [...(prev[activeContact.id] || []), data]
-      }))
+      if (activeContact) {
+        setMessages((prev) => ({
+          ...prev,
+          [activeContact.id]: [...(prev[activeContact.id] || []), data]
+        }))
+      }
     })
 
     return () => {
       window.removeEventListener('resize', handleResize)
       socket.off('receive_message')
     }
-  }, [activeContact.id])
+  }, [activeContact?.id])
 
   const handleSendMessage = (text) => {
+    if (!activeContact) return
     const newMessage = {
       sender: 'me',
       text,
@@ -330,38 +331,62 @@ function App() {
   }
 
   return (
-    <div className={`app-container ${isMobile ? 'mobile' : ''}`}>
+    <div className={`whatsapp-layout ${isMobile ? 'mobile' : ''}`}>
+      {!isMobile && (
+        <NavRail
+          activeTab={activeTab}
+          onTabChange={(tab) => {
+            if (tab === 'settings') setShowProfile(true);
+            else setActiveTab(tab);
+          }}
+          currentUser={currentUser}
+        />
+      )}
+
       {(!isMobile || mobileView === 'list') && (
         <Sidebar
           contacts={contacts}
           activeContact={activeContact}
           onSelectContact={handleSelectContact}
           currentUser={currentUser}
-          onLogout={handleLogout}
-          onShowProfile={() => setShowProfile(true)}
           onNewChat={() => setShowAddModal(true)}
-          onSelectStory={setSelectedStoryUser}
-          onUploadStory={handleUploadStory}
           mutedContacts={mutedContacts}
           blockedContacts={blockedContacts}
         />
       )}
+
       {(!isMobile || mobileView === 'chat') && (
-        <ChatWindow
-          activeContact={activeContact}
-          messages={messages[activeContact.id] || []}
-          onSendMessage={handleSendMessage}
-          onShowUserProfile={setSelectedProfileUser}
-          onCall={handleCall}
-          onMute={() => handleMute(activeContact.id)}
-          onClearChat={() => handleClearChat(activeContact.id)}
-          onBlock={() => handleBlock(activeContact.id)}
-          onBack={() => setMobileView('list')}
-          isMuted={mutedContacts.includes(activeContact.id)}
-          isBlocked={blockedContacts.includes(activeContact.id)}
-          isMobile={isMobile}
-        />
+        <div className="main-content-wa">
+          {activeContact ? (
+            <ChatWindow
+              activeContact={activeContact}
+              messages={messages[activeContact.id] || []}
+              onSendMessage={handleSendMessage}
+              onShowUserProfile={setSelectedProfileUser}
+              onCall={handleCall}
+              onMute={() => handleMute(activeContact.id)}
+              onClearChat={() => handleClearChat(activeContact.id)}
+              onBlock={() => handleBlock(activeContact.id)}
+              onBack={() => setMobileView('list')}
+              isMuted={mutedContacts.includes(activeContact.id)}
+              isBlocked={blockedContacts.includes(activeContact.id)}
+              isMobile={isMobile}
+            />
+          ) : (
+            <div className="empty-wa-view glass">
+              <div className="empty-wa-content">
+                <div className="wa-large-icon">💬</div>
+                <h1>WhatsApp for Windows</h1>
+                <p>Grow, organise and manage your business account.</p>
+                <div className="wa-encryption-footer">
+                  <span>🔒 Your personal messages are end-to-end encrypted</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       )}
+
       {showAddModal && (
         <AddContactModal
           onClose={() => setShowAddModal(false)}
