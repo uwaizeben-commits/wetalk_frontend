@@ -747,9 +747,13 @@ body {
   opacity: 0.8;
 }
 
+.logout-nav-btn {
+  color: #ef4444 !important;
+}
+
 .logout-nav-btn:hover {
   background: rgba(239, 68, 68, 0.1) !important;
-  color: #ef4444 !important;
+  color: #dc2626 !important;
 }
 
 .no-results-wa {

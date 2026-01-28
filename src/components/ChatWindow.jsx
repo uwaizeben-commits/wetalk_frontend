@@ -27,8 +27,8 @@ const ChatWindow = ({
                     <button className="icon-btn-wa" onClick={() => onCall(activeContact, 'video')} title="Video Call">🎥</button>
                     <button className="icon-btn-wa" onClick={() => onCall(activeContact, 'voice')} title="Voice Call">📞</button>
                     <div className="wa-header-divider"></div>
-                    <button className="icon-btn-wa" title="Search">🔍</button>
-                    <button className="icon-btn-wa" title="Menu">⋮</button>
+                    <button className="icon-btn-wa" title="Search" onClick={() => alert('Search in conversation coming soon!')}>🔍</button>
+                    <button className="icon-btn-wa" title="Menu" onClick={() => alert('Chat options coming soon!')}>⋮</button>
                 </div>
             </header>
 

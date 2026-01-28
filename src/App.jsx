@@ -145,8 +145,8 @@ function App() {
         body: JSON.stringify({ username: currentUser.username })
       });
       if (response.ok) {
-        alert('Account deleted successfully. You can now register again with the same phone number.');
         handleLogout();
+        alert('Account deleted successfully. You can now register again with the same phone number.');
       } else {
         const data = await response.json();
         alert(data.message || 'Failed to delete account');
@@ -380,8 +380,8 @@ function App() {
             <div className="empty-wa-view glass">
               <div className="empty-wa-content">
                 <div className="wa-large-icon">💬</div>
-                <h1>WhatsApp for Windows</h1>
-                <p>Grow, organise and manage your business account.</p>
+                <h1>WE TALK</h1>
+                <p>Grow, organise and manage your account.</p>
                 <div className="wa-encryption-footer">
                   <span>🔒 Your personal messages are end-to-end encrypted</span>
                 </div>

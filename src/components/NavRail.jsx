@@ -43,10 +43,6 @@ const NavRail = ({ activeTab, onTabChange, currentUser, onLogout }) => {
                     <span className="nav-icon">⚙️</span>
                 </button>
 
-                <button className="nav-item logout-nav-btn" onClick={onLogout} title="Logout">
-                    <span className="nav-icon">⏻</span>
-                </button>
-
                 <div className="nav-user-avatar" onClick={() => onTabChange('settings')} title="My Profile">
                     {currentUser?.profilePic ? (
                         <img src={currentUser.profilePic} alt="Me" />
@@ -54,6 +50,10 @@ const NavRail = ({ activeTab, onTabChange, currentUser, onLogout }) => {
                         currentUser?.firstName?.[0] || '?'
                     )}
                 </div>
+
+                <button className="nav-item logout-nav-btn" onClick={onLogout} title="Logout">
+                    <span className="nav-icon">⏻</span>
+                </button>
             </div>
         </div>
     );

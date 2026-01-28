@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import StoriesBar from './StoriesBar';
 
 const Sidebar = ({
     contacts,
@@ -61,7 +62,7 @@ const Sidebar = ({
                         <button className="icon-btn-wa" onClick={onNewChat} title="New Chat">
                             <span className="wa-icon">📝</span>
                         </button>
-                        <button className="icon-btn-wa" title="Menu">
+                        <button className="icon-btn-wa" title="Menu" onClick={() => alert('Sidebar Menu coming soon!')}>
                             <span className="wa-icon">⋮</span>
                         </button>
                     </div>
