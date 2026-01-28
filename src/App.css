@@ -747,6 +747,23 @@ body {
   opacity: 0.8;
 }
 
+.logout-nav-btn:hover {
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: #ef4444 !important;
+}
+
+.no-results-wa {
+  padding: 20px;
+  text-align: center;
+  color: var(--wa-text-secondary);
+  font-size: 0.9rem;
+}
+
+.status-view-wa {
+  flex: 1;
+  overflow-y: auto;
+}
+
 .avatar-placeholder {
   display: flex;
   align-items: center;

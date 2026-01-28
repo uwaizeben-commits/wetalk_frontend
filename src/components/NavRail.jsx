@@ -1,17 +1,15 @@
 import React from 'react';
 
-const NavRail = ({ activeTab, onTabChange, currentUser }) => {
+const NavRail = ({ activeTab, onTabChange, currentUser, onLogout }) => {
     const tabs = [
-        { id: 'chats', icon: '💬', label: 'Chats', notification: 61 },
-        { id: 'calls', icon: '📞', label: 'Calls', notification: 10 },
+        { id: 'chats', icon: '💬', label: 'Chats' },
+        { id: 'calls', icon: '📞', label: 'Calls' },
         { id: 'status', icon: '⭕', label: 'Status' },
-        { id: 'communities', icon: '👥', label: 'Communities' },
     ];
 
     const bottomTabs = [
         { id: 'starred', icon: '⭐', label: 'Starred' },
         { id: 'archived', icon: '📥', label: 'Archived' },
-        { id: 'settings', icon: '⚙️', label: 'Settings' },
     ];
 
     return (
@@ -25,9 +23,6 @@ const NavRail = ({ activeTab, onTabChange, currentUser }) => {
                         title={tab.label}
                     >
                         <span className="nav-icon">{tab.icon}</span>
-                        {tab.notification > 0 && (
-                            <span className="nav-badge">{tab.notification}</span>
-                        )}
                     </button>
                 ))}
             </div>
@@ -43,7 +38,16 @@ const NavRail = ({ activeTab, onTabChange, currentUser }) => {
                         <span className="nav-icon">{tab.icon}</span>
                     </button>
                 ))}
-                <div className="nav-user-avatar">
+
+                <button className="nav-item" onClick={() => onTabChange('settings')} title="Settings">
+                    <span className="nav-icon">⚙️</span>
+                </button>
+
+                <button className="nav-item logout-nav-btn" onClick={onLogout} title="Logout">
+                    <span className="nav-icon">⏻</span>
+                </button>
+
+                <div className="nav-user-avatar" onClick={() => onTabChange('settings')} title="My Profile">
                     {currentUser?.profilePic ? (
                         <img src={currentUser.profilePic} alt="Me" />
                     ) : (

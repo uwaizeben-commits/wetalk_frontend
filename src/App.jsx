@@ -340,6 +340,7 @@ function App() {
             else setActiveTab(tab);
           }}
           currentUser={currentUser}
+          onLogout={handleLogout}
         />
       )}
 
@@ -350,6 +351,9 @@ function App() {
           onSelectContact={handleSelectContact}
           currentUser={currentUser}
           onNewChat={() => setShowAddModal(true)}
+          onSelectStory={setSelectedStoryUser}
+          onUploadStory={handleUploadStory}
+          activeTab={activeTab}
           mutedContacts={mutedContacts}
           blockedContacts={blockedContacts}
         />
