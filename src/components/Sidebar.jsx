@@ -1,4 +1,5 @@
 import React from 'react';
+import StoriesBar from './StoriesBar';
 
 const Sidebar = ({
     contacts,
@@ -8,6 +9,8 @@ const Sidebar = ({
     onLogout,
     onShowProfile,
     onNewChat,
+    onSelectStory,
+    onUploadStory,
     mutedContacts = [],
     blockedContacts = []
 }) => {
@@ -20,6 +23,13 @@ const Sidebar = ({
             <div className="search-bar">
                 <input type="text" placeholder="Search conversations..." />
             </div>
+
+            <StoriesBar
+                currentUser={currentUser}
+                onStorySelect={onSelectStory}
+                onUploadClick={onUploadStory}
+            />
+
             <nav className="contact-list">
                 {contacts.map((contact) => (
                     <div

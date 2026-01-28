@@ -9,6 +9,7 @@ import UserDetail from './components/UserDetail'
 import CallInterface from './components/CallInterface'
 import AddContactModal from './components/AddContactModal'
 import Recovery from './components/Auth/Recovery'
+import StoryViewer from './components/StoryViewer'
 import './App.css'
 
 const socket = io('http://127.0.0.1:3001')
@@ -25,6 +26,8 @@ function App() {
   const [mutedContacts, setMutedContacts] = useState([])
   const [blockedContacts, setBlockedContacts] = useState([])
   const [showAddModal, setShowAddModal] = useState(false)
+  const [selectedStoryUser, setSelectedStoryUser] = useState(null)
+  const storyInputRef = useRef(null)
 
   // Mobile responsiveness states
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
@@ -219,6 +222,57 @@ function App() {
     handleSelectContact(newContact);
   }
 
+  const handleUploadStory = () => {
+    storyInputRef.current?.click()
+  }
+
+  const handleStoryFileChange = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    const isVideo = file.type.startsWith('video/')
+    if (isVideo) {
+      // Basic 30s check (simulated or via video element)
+      const video = document.createElement('video')
+      video.preload = 'metadata'
+      video.onloadedmetadata = () => {
+        window.URL.revokeObjectURL(video.src)
+        if (video.duration > 30) {
+          alert('Video must be 30 seconds or less')
+          return
+        }
+        processUpload(file, 'video')
+      }
+      video.src = URL.createObjectURL(file)
+    } else {
+      processUpload(file, 'image')
+    }
+  }
+
+  const processUpload = async (file, type) => {
+    const reader = new FileReader()
+    reader.onloadend = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:3001/stories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: currentUser.username, // Using username as id for simplicity
+            username: currentUser.firstName || currentUser.username,
+            type,
+            url: reader.result
+          })
+        })
+        if (response.ok) {
+          alert('Status uploaded successfully!')
+        }
+      } catch (err) {
+        alert('Failed to upload status')
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
   if (!currentUser) {
     if (authMode === 'login') {
       return (
@@ -286,6 +340,8 @@ function App() {
           onLogout={handleLogout}
           onShowProfile={() => setShowProfile(true)}
           onNewChat={() => setShowAddModal(true)}
+          onSelectStory={setSelectedStoryUser}
+          onUploadStory={handleUploadStory}
           mutedContacts={mutedContacts}
           blockedContacts={blockedContacts}
         />
@@ -312,6 +368,19 @@ function App() {
           onAddContact={handleAddContact}
         />
       )}
+      {selectedStoryUser && (
+        <StoryViewer
+          userStories={selectedStoryUser}
+          onClose={() => setSelectedStoryUser(null)}
+        />
+      )}
+      <input
+        type="file"
+        ref={storyInputRef}
+        style={{ display: 'none' }}
+        accept="image/*,video/*"
+        onChange={handleStoryFileChange}
+      />
     </div>
   )
 }
