@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import API_URL from '../config';
+import API_URL from '../../config';
 
 const Register = ({ onRegister, onSwitchToLogin }) => {
     const [step, setStep] = useState(1); // 1: Details, 2: OTP

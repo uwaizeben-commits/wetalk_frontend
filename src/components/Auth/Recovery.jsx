@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import API_URL from '../config';
+import API_URL from '../../config';
 
 const Recovery = ({ onSwitchToLogin }) => {
     const [step, setStep] = useState(1); // 1: Phone, 2: OTP, 3: Reset/Result
