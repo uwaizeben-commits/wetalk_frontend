@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import API_URL from '../config';
 
 const AddContactModal = ({ onClose, onAddContact }) => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -13,7 +14,7 @@ const AddContactModal = ({ onClose, onAddContact }) => {
         setIsLoading(true);
         setError('');
         try {
-            const response = await fetch(`http://127.0.0.1:3001/users/search?query=${encodeURIComponent(searchQuery)}`);
+            const response = await fetch(`${API_URL}/users/search?query=${encodeURIComponent(searchQuery)}`);
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 throw new Error(errorData.message || `Server error: ${response.status}`);

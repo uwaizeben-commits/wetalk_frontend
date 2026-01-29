@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import API_URL from '../config';
 
 const Feed = ({ currentUser }) => {
     const [posts, setPosts] = useState([]);
@@ -13,7 +14,7 @@ const Feed = ({ currentUser }) => {
 
     const fetchPosts = async () => {
         try {
-            const response = await fetch('http://127.0.0.1:3001/posts');
+            const response = await fetch(`${API_URL}/posts`);
             if (response.ok) {
                 const data = await response.json();
                 setPosts(data);
@@ -43,7 +44,7 @@ const Feed = ({ currentUser }) => {
 
         setIsLoading(true);
         try {
-            const response = await fetch('http://127.0.0.1:3001/posts', {
+            const response = await fetch(`${API_URL}/posts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -69,7 +70,7 @@ const Feed = ({ currentUser }) => {
 
     const handleLike = async (postId) => {
         try {
-            const response = await fetch(`http://127.0.0.1:3001/posts/${postId}/like`, {
+            const response = await fetch(`${API_URL}/posts/${postId}/like`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: currentUser.id })
@@ -83,7 +84,7 @@ const Feed = ({ currentUser }) => {
     const handleComment = async (postId, text) => {
         if (!text.trim()) return;
         try {
-            const response = await fetch(`http://127.0.0.1:3001/posts/${postId}/comment`, {
+            const response = await fetch(`${API_URL}/posts/${postId}/comment`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -101,7 +102,7 @@ const Feed = ({ currentUser }) => {
     const handleReply = async (postId, commentId, text) => {
         if (!text.trim()) return;
         try {
-            const response = await fetch(`http://127.0.0.1:3001/posts/${postId}/comment/${commentId}/reply`, {
+            const response = await fetch(`${API_URL}/posts/${postId}/comment/${commentId}/reply`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

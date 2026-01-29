@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import API_URL from '../config';
 
 const Recovery = ({ onSwitchToLogin }) => {
     const [step, setStep] = useState(1); // 1: Phone, 2: OTP, 3: Reset/Result
@@ -26,7 +27,7 @@ const Recovery = ({ onSwitchToLogin }) => {
         setError('');
         setIsLoading(true);
         try {
-            const response = await fetch('http://127.0.0.1:3001/recovery/request-otp', {
+            const response = await fetch(`${API_URL}/recovery/request-otp`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone })
@@ -52,7 +53,7 @@ const Recovery = ({ onSwitchToLogin }) => {
         setError('');
         setIsLoading(true);
         try {
-            const response = await fetch('http://127.0.0.1:3001/recovery/verify', {
+            const response = await fetch(`${API_URL}/recovery/verify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone, otp })
@@ -78,7 +79,7 @@ const Recovery = ({ onSwitchToLogin }) => {
         setError('');
         setIsLoading(true);
         try {
-            const response = await fetch('http://127.0.0.1:3001/recovery/reset-password', {
+            const response = await fetch(`${API_URL}/recovery/reset-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone, otp, newPassword })

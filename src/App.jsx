@@ -14,8 +14,9 @@ import Calls from './components/Calls'
 import NavRail from './components/NavRail'
 import CreateGroupModal from './components/CreateGroupModal'
 import './App.css'
+import API_URL from './config'
 
-const socket = io('http://127.0.0.1:3001')
+const socket = io(API_URL)
 
 function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -86,7 +87,7 @@ function App() {
   const fetchContacts = async () => {
     if (!currentUser?.id) return
     try {
-      const response = await fetch(`http://127.0.0.1:3001/contacts/${currentUser.id}`)
+      const response = await fetch(`${API_URL}/contacts/${currentUser.id}`)
       if (response.ok) {
         const data = await response.json()
         setContacts(data)
@@ -99,7 +100,7 @@ function App() {
   const fetchGroups = async () => {
     if (!currentUser?.id) return
     try {
-      const response = await fetch(`http://127.0.0.1:3001/groups/user/${currentUser.id}`);
+      const response = await fetch(`${API_URL}/groups/user/${currentUser.id}`);
       if (response.ok) {
         const data = await response.json();
         setGroups(data);
@@ -131,8 +132,8 @@ function App() {
   const fetchMessages = async (contactId, isGroup = false) => {
     try {
       const endpoint = isGroup
-        ? `http://127.0.0.1:3001/groups/${contactId}/messages`
-        : `http://127.0.0.1:3001/messages/${currentUser.id}/${contactId}`;
+        ? `${API_URL}/groups/${contactId}/messages`
+        : `${API_URL}/messages/${currentUser.id}/${contactId}`;
 
       const response = await fetch(endpoint)
       if (response.ok) {
@@ -189,7 +190,7 @@ function App() {
 
   const handleLogin = async (credentials) => {
     try {
-      const response = await fetch('http://127.0.0.1:3001/login', {
+      const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials)
@@ -211,7 +212,7 @@ function App() {
 
   const handleRegister = async (userData) => {
     try {
-      const response = await fetch('http://127.0.0.1:3001/register', {
+      const response = await fetch(`${API_URL}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData)
@@ -234,7 +235,7 @@ function App() {
 
   const handleUpdateProfile = async (updatedData) => {
     try {
-      const response = await fetch(`http://127.0.0.1:3001/users/${currentUser.id}/profile`, {
+      const response = await fetch(`${API_URL}/users/${currentUser.id}/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedData)
@@ -252,7 +253,7 @@ function App() {
 
   const handleUpdateSettings = async (newSettings) => {
     try {
-      const response = await fetch(`http://127.0.0.1:3001/users/${currentUser.id}/settings`, {
+      const response = await fetch(`${API_URL}/users/${currentUser.id}/settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ settings: newSettings })
@@ -272,7 +273,7 @@ function App() {
   const handleClearChats = async () => {
     if (window.confirm('Are you sure you want to delete ALL messages? This cannot be undone.')) {
       try {
-        const response = await fetch(`http://127.0.0.1:3001/messages/clear/${currentUser.id}`, { method: 'DELETE' });
+        const response = await fetch(`${API_URL}/messages/clear/${currentUser.id}`, { method: 'DELETE' });
         if (response.ok) {
           setMessages({});
           alert('All chat history cleared!');
@@ -296,7 +297,7 @@ function App() {
 
   const handleDeleteAccount = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:3001/account/delete', {
+      const response = await fetch(`${API_URL}/account/delete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: currentUser.username })
@@ -343,30 +344,30 @@ function App() {
   }
 
   const handleArchiveChat = async (contact) => {
-      try {
-          const response = await fetch(`http://127.0.0.1:3001/users/${currentUser.id}/chat/${contact.id}/archive`, { method: 'POST' });
-          if (response.ok) {
-              const data = await response.json();
-              // Optimistic or Refetch
-              fetchContacts();
-              fetchGroups(); // Just easier to refetch all
-          }
-      } catch (err) {
-          console.error('Archive error:', err);
+    try {
+      const response = await fetch(`${API_URL}/users/${currentUser.id}/chat/${contact.id}/archive`, { method: 'POST' });
+      if (response.ok) {
+        const data = await response.json();
+        // Optimistic or Refetch
+        fetchContacts();
+        fetchGroups(); // Just easier to refetch all
       }
+    } catch (err) {
+      console.error('Archive error:', err);
+    }
   };
 
   const handleStarChat = async (contact) => {
-      try {
-          const response = await fetch(`http://127.0.0.1:3001/users/${currentUser.id}/chat/${contact.id}/star`, { method: 'POST' });
-          if (response.ok) {
-              const data = await response.json();
-              fetchContacts();
-              fetchGroups();
-          }
-      } catch (err) {
-          console.error('Star error:', err);
+    try {
+      const response = await fetch(`${API_URL}/users/${currentUser.id}/chat/${contact.id}/star`, { method: 'POST' });
+      if (response.ok) {
+        const data = await response.json();
+        fetchContacts();
+        fetchGroups();
       }
+    } catch (err) {
+      console.error('Star error:', err);
+    }
   };
 
   const handleNewChat = () => {
@@ -381,7 +382,7 @@ function App() {
 
   const handleAddContact = async (user) => {
     try {
-      const response = await fetch('http://127.0.0.1:3001/contacts/add', {
+      const response = await fetch(`${API_URL}/contacts/add`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: currentUser.id, contactId: user.id })

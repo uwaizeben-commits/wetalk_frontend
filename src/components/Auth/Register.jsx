@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import API_URL from '../config';
 
 const Register = ({ onRegister, onSwitchToLogin }) => {
     const [step, setStep] = useState(1); // 1: Details, 2: OTP
@@ -38,7 +39,7 @@ const Register = ({ onRegister, onSwitchToLogin }) => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://127.0.0.1:3001/request-otp', {
+            const response = await fetch(`${API_URL}/request-otp`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone: formData.phone })

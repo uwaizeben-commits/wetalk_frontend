@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '../utils/cropImage';
+import API_URL from '../config';
 
 const Settings = ({ currentUser, onUpdateProfile, onUpdateSettings, onLogout, onDeleteAccount, onClearChats, onBack }) => {
     const [activeSection, setActiveSection] = useState('profile');
@@ -92,7 +93,7 @@ const Settings = ({ currentUser, onUpdateProfile, onUpdateSettings, onLogout, on
             return;
         }
         try {
-            const response = await fetch(`http://127.0.0.1:3001/users/${currentUser.id}/change-password`, {
+            const response = await fetch(`${API_URL}/users/${currentUser.id}/change-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ currentPassword: passwordData.current, newPassword: passwordData.new })
@@ -111,7 +112,7 @@ const Settings = ({ currentUser, onUpdateProfile, onUpdateSettings, onLogout, on
 
     const fetchBlockedUsers = async () => {
         try {
-            const response = await fetch(`http://127.0.0.1:3001/users/${currentUser.id}/blocked`);
+            const response = await fetch(`${API_URL}/users/${currentUser.id}/blocked`);
             if (response.ok) {
                 const data = await response.json();
                 setBlockedUsers(data);
@@ -124,7 +125,7 @@ const Settings = ({ currentUser, onUpdateProfile, onUpdateSettings, onLogout, on
 
     const handleUnblock = async (contactId) => {
         try {
-            const response = await fetch(`http://127.0.0.1:3001/users/${currentUser.id}/unblock`, {
+            const response = await fetch(`${API_URL}/users/${currentUser.id}/unblock`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contactId })
