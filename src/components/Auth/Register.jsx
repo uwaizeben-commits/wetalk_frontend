@@ -48,8 +48,7 @@ const Register = ({ onRegister, onSwitchToLogin }) => {
                 setStep(2);
                 setTimer(30);
                 setCanResend(false);
-                // In this demo, we'll alert the OTP for convenience
-                alert(`DEMO: Your OTP code is ${data.otp}`);
+                // OTP sent to console, not screen alert
             } else {
                 setError(data.message);
             }

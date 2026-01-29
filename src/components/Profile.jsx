@@ -1,21 +1,56 @@
 import React, { useState, useRef } from 'react';
+import Cropper from 'react-easy-crop';
+import getCroppedImg from '../utils/cropImage';
 
 const Profile = ({ currentUser, onUpdateProfile, onDeleteAccount, onBack }) => {
     const [firstName, setFirstName] = useState(currentUser?.firstName || '');
     const [lastname, setLastname] = useState(currentUser?.lastname || '');
     const [bio, setBio] = useState(currentUser?.bio || '');
     const [profilePic, setProfilePic] = useState(currentUser?.profilePic || null);
+
+    // Image Cropping State
+    const [imageSrc, setImageSrc] = useState(null);
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+    const [showCropModal, setShowCropModal] = useState(false);
+
     const fileInputRef = useRef(null);
 
     const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
+        if (e.target.files && e.target.files.length > 0) {
+            const file = e.target.files[0];
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setProfilePic(reader.result);
-            };
+            reader.addEventListener('load', () => {
+                setImageSrc(reader.result);
+                setShowCropModal(true);
+            });
             reader.readAsDataURL(file);
+            e.target.value = null;
         }
+    };
+
+    const onCropComplete = (croppedArea, croppedAreaPixels) => {
+        setCroppedAreaPixels(croppedAreaPixels);
+    };
+
+    const showCroppedImage = async () => {
+        try {
+            const croppedImage = await getCroppedImg(
+                imageSrc,
+                croppedAreaPixels
+            );
+            setProfilePic(croppedImage);
+            setShowCropModal(false);
+            setImageSrc(null);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const closeCropModal = () => {
+        setShowCropModal(false);
+        setImageSrc(null);
     };
 
     const handleSubmit = (e) => {
@@ -119,6 +154,50 @@ const Profile = ({ currentUser, onUpdateProfile, onDeleteAccount, onBack }) => {
                         </button>
                     </div>
                 </form>
+
+                {showCropModal && (
+                    <div className="modal-overlay">
+                        <div className="modal glass crop-modal" style={{ width: '90%', maxWidth: '500px', height: 'auto' }}>
+                            <div className="modal-header">
+                                <h3>Adjust Profile Picture</h3>
+                                <button className="close-btn" onClick={closeCropModal}>✕</button>
+                            </div>
+                            <div className="crop-container" style={{ position: 'relative', width: '100%', height: '300px', background: '#333' }}>
+                                <Cropper
+                                    image={imageSrc}
+                                    crop={crop}
+                                    zoom={zoom}
+                                    aspect={1}
+                                    onCropChange={setCrop}
+                                    onCropComplete={onCropComplete}
+                                    onZoomChange={setZoom}
+                                    showGrid={false}
+                                    cropShape="round"
+                                />
+                            </div>
+                            <div className="crop-controls" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                <div className="slider-container" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <span>Zoom</span>
+                                    <input
+                                        type="range"
+                                        value={zoom}
+                                        min={1}
+                                        max={3}
+                                        step={0.1}
+                                        aria-labelledby="Zoom"
+                                        onChange={(e) => setZoom(Number(e.target.value))}
+                                        className="zoom-range"
+                                        style={{ flex: 1 }}
+                                    />
+                                </div>
+                                <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                                    <button className="wa-btn secondary" onClick={closeCropModal}>Cancel</button>
+                                    <button className="wa-btn primary" onClick={showCroppedImage}>Save Picture</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

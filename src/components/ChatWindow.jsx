@@ -8,7 +8,8 @@ const ChatWindow = ({
     onShowUserProfile,
     onCall,
     onBack,
-    isMobile
+    isMobile,
+    wallpaper = 'default'
 }) => {
     return (
         <div className="chat-window-wa">
@@ -32,7 +33,7 @@ const ChatWindow = ({
                 </div>
             </header>
 
-            <div className="messages-container-wa custom-scrollbar">
+            <div className={`messages-container-wa custom-scrollbar wallpaper-${wallpaper}`}>
                 {messages.map((msg, index) => (
                     <div key={index} className={`message-row-wa ${msg.sender === 'me' ? 'sent' : 'received'}`}>
                         <div className="message-bubble-wa">

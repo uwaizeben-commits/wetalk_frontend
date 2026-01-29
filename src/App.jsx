@@ -4,13 +4,15 @@ import Sidebar from './components/Sidebar'
 import ChatWindow from './components/ChatWindow'
 import Login from './components/Auth/Login'
 import Register from './components/Auth/Register'
-import Profile from './components/Profile'
 import UserDetail from './components/UserDetail'
 import CallInterface from './components/CallInterface'
 import AddContactModal from './components/AddContactModal'
 import Recovery from './components/Auth/Recovery'
-import StoryViewer from './components/StoryViewer'
+import Feed from './components/Feed'
+import Settings from './components/Settings'
+import Calls from './components/Calls'
 import NavRail from './components/NavRail'
+import CreateGroupModal from './components/CreateGroupModal'
 import './App.css'
 
 const socket = io('http://127.0.0.1:3001')
@@ -18,68 +20,171 @@ const socket = io('http://127.0.0.1:3001')
 function App() {
   const [currentUser, setCurrentUser] = useState(() => {
     const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
+    if (savedUser) {
+      const parsed = JSON.parse(savedUser);
+      if (!parsed.id && parsed._id) parsed.id = parsed._id;
+      return parsed;
+    }
+    return null;
   })
   const [authMode, setAuthMode] = useState('login')
-  const [showProfile, setShowProfile] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const [selectedProfileUser, setSelectedProfileUser] = useState(null)
   const [activeCall, setActiveCall] = useState(null)
   const [mutedContacts, setMutedContacts] = useState([])
   const [blockedContacts, setBlockedContacts] = useState([])
   const [showAddModal, setShowAddModal] = useState(false)
-  const [selectedStoryUser, setSelectedStoryUser] = useState(null)
-  const storyInputRef = useRef(null)
 
   // Mobile responsiveness states
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
   const [mobileView, setMobileView] = useState('list') // 'list' or 'chat'
 
-  const [contacts, setContacts] = useState([
-    { id: 1, name: 'OVER_NKEM❤️❤️🌹', avatar: 'ON', lastMessage: 'You don Dey come?', time: '04:17', unread: 0 },
-    { id: 2, name: 'Ksolo', avatar: 'KS', lastMessage: '📞 Missed voice call', time: 'Monday', unread: 10 },
-    { id: 3, name: 'Mucm❤️❤️', avatar: 'MC', lastMessage: '✓ Good morning uncle Chris.', time: 'Yesterday', unread: 0 },
-    { id: 4, name: 'NARVIK GMC SOFTWARE DEV.', avatar: 'NG', lastMessage: '~ JOJOMIWA: Onto the Next Great ...', time: '04:24', unread: 4 },
-  ])
+  const [contacts, setContacts] = useState([])
+  const [activeContact, setActiveContact] = useState(null)
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('activeTab') || 'chats')
+  const [messages, setMessages] = useState({})
 
-  const [activeContact, setActiveContact] = useState(null) // Start null for empty view
-  const [activeTab, setActiveTab] = useState('chats')
+  // Group Chat States
+  const [groups, setGroups] = useState([])
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false)
 
-  const [messages, setMessages] = useState({
-    1: [{ sender: 'other', text: 'You don Dey come?', time: '04:17' }],
-    2: [{ sender: 'other', text: 'Missed voice call', time: 'Monday' }],
-  })
+  useEffect(() => {
+    localStorage.setItem('activeTab', activeTab);
+  }, [activeTab]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768)
     window.addEventListener('resize', handleResize)
 
+    if (currentUser?.id) {
+      socket.emit('join', currentUser.id)
+      fetchContacts()
+      fetchGroups()
+      // Apply theme and font size
+      document.body.className = `theme-${currentUser.settings?.chat?.theme || 'light'} font-${currentUser.settings?.chat?.fontSize || 'medium'}`;
+    }
+
     socket.on('receive_message', (data) => {
-      if (activeContact) {
+      // If message is from currently active chat, show it
+      if (activeContact && (data.senderId === activeContact.id)) {
         setMessages((prev) => ({
           ...prev,
-          [activeContact.id]: [...(prev[activeContact.id] || []), data]
+          [activeContact.id]: [...(prev[activeContact.id] || []), { sender: 'other', text: data.text, time: data.time }]
         }))
       }
+      // Refresh contacts/groups to show last message update
+      fetchContacts()
+      fetchGroups() // Also refresh groups in case of group messages
     })
 
     return () => {
       window.removeEventListener('resize', handleResize)
       socket.off('receive_message')
     }
-  }, [activeContact?.id])
+  }, [currentUser?.id, activeContact?.id])
+
+  const fetchContacts = async () => {
+    if (!currentUser?.id) return
+    try {
+      const response = await fetch(`http://127.0.0.1:3001/contacts/${currentUser.id}`)
+      if (response.ok) {
+        const data = await response.json()
+        setContacts(data)
+      }
+    } catch (err) {
+      console.error('Fetch contacts error:', err)
+    }
+  }
+
+  const fetchGroups = async () => {
+    if (!currentUser?.id) return
+    try {
+      const response = await fetch(`http://127.0.0.1:3001/groups/user/${currentUser.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setGroups(data);
+
+        // Join socket rooms for groups
+        data.forEach(group => {
+          socket.emit('join', group._id);
+        });
+      }
+    } catch (err) {
+      console.error('Fetch groups error:', err);
+    }
+  };
+
+  const handleCreateGroup = (newGroup) => {
+    setGroups(prev => [...prev, newGroup]);
+    socket.emit('join', newGroup._id); // Join the new group room
+    setActiveContact({
+      id: newGroup._id,
+      name: newGroup.name,
+      avatar: newGroup.icon || '👥',
+      isGroup: true,
+      admins: newGroup.admins,
+      members: newGroup.members
+    });
+    setShowCreateGroupModal(false);
+  };
+
+  const fetchMessages = async (contactId, isGroup = false) => {
+    try {
+      const endpoint = isGroup
+        ? `http://127.0.0.1:3001/groups/${contactId}/messages`
+        : `http://127.0.0.1:3001/messages/${currentUser.id}/${contactId}`;
+
+      const response = await fetch(endpoint)
+      if (response.ok) {
+        const data = await response.json()
+        setMessages(prev => ({ ...prev, [contactId]: data }))
+      }
+    } catch (err) {
+      console.error('Fetch messages error:', err)
+    }
+  }
 
   const handleSendMessage = (text) => {
     if (!activeContact) return
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
     const newMessage = {
-      sender: 'me',
+      senderId: currentUser.id,
       text,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      time
+    };
+
+    if (activeContact.isGroup) {
+      newMessage.groupId = activeContact.id;
+      // No receiverId for groups
+    } else {
+      newMessage.receiverId = activeContact.id;
     }
+
     socket.emit('send_message', newMessage)
+
+    // For groups, we wait for socket to reflect back or we can optimistic update if careful
+    // For now, optimistic update for better UX, similar to 1-on-1
     setMessages((prev) => ({
       ...prev,
-      [activeContact.id]: [...(prev[activeContact.id] || []), newMessage]
+      [activeContact.id]: [...(prev[activeContact.id] || []), {
+        sender: 'me',
+        text,
+        time,
+        // For groups, we might want to show our own name? Usually 'me' is fine for UI logic
+      }]
     }))
+
+    // Optimistic UI for last message in sidebar
+    if (activeContact.isGroup) {
+      setGroups(prev => prev.map(g =>
+        g._id === activeContact.id ? { ...g, lastMessage: { text, sender: currentUser.id } } : g
+      ));
+    } else {
+      setContacts(prev => prev.map(c =>
+        c.id === activeContact.id ? { ...c, lastMessage: text, time: 'Just now' } : c
+      ));
+    }
   }
 
   const handleLogin = async (credentials) => {
@@ -91,8 +196,10 @@ function App() {
       });
       const data = await response.json();
       if (response.ok) {
-        setCurrentUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        const user = data.user;
+        if (!user.id && user._id) user.id = user._id; // Normalize ID
+        setCurrentUser(user);
+        localStorage.setItem('user', JSON.stringify(user));
       } else {
         alert(data.message);
       }
@@ -111,8 +218,11 @@ function App() {
       });
       const data = await response.json();
       if (response.ok) {
-        alert('Registration successful! Please login.');
-        setAuthMode('login');
+        // Auto login on successful registration
+        const user = data.user;
+        if (!user.id && user._id) user.id = user._id;
+        setCurrentUser(user);
+        localStorage.setItem('user', JSON.stringify(user));
       } else {
         alert(data.message);
       }
@@ -122,19 +232,66 @@ function App() {
     }
   }
 
+  const handleUpdateProfile = async (updatedData) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:3001/users/${currentUser.id}/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData)
+      });
+      if (response.ok) {
+        const freshUser = await response.json();
+        setCurrentUser(freshUser);
+        localStorage.setItem('user', JSON.stringify(freshUser));
+        alert('Profile updated successfully!');
+      }
+    } catch (err) {
+      console.error('Update profile error:', err);
+    }
+  }
+
+  const handleUpdateSettings = async (newSettings) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:3001/users/${currentUser.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings: newSettings })
+      });
+      if (response.ok) {
+        const freshUser = await response.json();
+        setCurrentUser(freshUser);
+        localStorage.setItem('user', JSON.stringify(freshUser));
+        // Apply theme/font immediately
+        document.body.className = `theme-${newSettings.chat.theme} font-${newSettings.chat.fontSize}`;
+      }
+    } catch (err) {
+      console.error('Update settings error:', err);
+    }
+  }
+
+  const handleClearChats = async () => {
+    if (window.confirm('Are you sure you want to delete ALL messages? This cannot be undone.')) {
+      try {
+        const response = await fetch(`http://127.0.0.1:3001/messages/clear/${currentUser.id}`, { method: 'DELETE' });
+        if (response.ok) {
+          setMessages({});
+          alert('All chat history cleared!');
+        }
+      } catch (err) {
+        console.error('Clear chats error:', err);
+      }
+    }
+  }
+
   const handleLogout = () => {
     setCurrentUser(null)
     localStorage.removeItem('user')
     setAuthMode('login')
-    setShowProfile(false)
+    setShowSettings(false)
     setSelectedProfileUser(null)
     setActiveCall(null)
-  }
-
-  const handleUpdateProfile = (updatedUser) => {
-    setCurrentUser(updatedUser)
-    setShowProfile(false)
-    alert('Profile updated successfully!')
+    setContacts([])
+    setMessages({})
   }
 
   const handleDeleteAccount = async () => {
@@ -169,6 +326,7 @@ function App() {
 
   const handleClearChat = (contactId) => {
     if (window.confirm('Are you sure you want to clear this chat?')) {
+      // In a real app, you'd add a DELETE messages endpoint
       setMessages(prev => ({ ...prev, [contactId]: [] }))
     }
   }
@@ -184,94 +342,58 @@ function App() {
     }
   }
 
+  const handleArchiveChat = async (contact) => {
+      try {
+          const response = await fetch(`http://127.0.0.1:3001/users/${currentUser.id}/chat/${contact.id}/archive`, { method: 'POST' });
+          if (response.ok) {
+              const data = await response.json();
+              // Optimistic or Refetch
+              fetchContacts();
+              fetchGroups(); // Just easier to refetch all
+          }
+      } catch (err) {
+          console.error('Archive error:', err);
+      }
+  };
+
+  const handleStarChat = async (contact) => {
+      try {
+          const response = await fetch(`http://127.0.0.1:3001/users/${currentUser.id}/chat/${contact.id}/star`, { method: 'POST' });
+          if (response.ok) {
+              const data = await response.json();
+              fetchContacts();
+              fetchGroups();
+          }
+      } catch (err) {
+          console.error('Star error:', err);
+      }
+  };
+
   const handleNewChat = () => {
-    const names = ['Emma Wilson', 'Liam Brown', 'Sophia Davis', 'Jackson Miller'];
-    const randomName = names[Math.floor(Math.random() * names.length)];
-    const newId = Date.now();
-    const newContact = {
-      id: newId,
-      name: randomName,
-      avatar: randomName.split(' ').map(n => n[0]).join(''),
-      lastMessage: 'Let\'s chat!',
-      time: 'Just now',
-      phone: '+1 555-0' + Math.floor(Math.random() * 1000),
-      bio: 'New to Wetalk!'
-    };
-    setContacts(prev => [newContact, ...prev]);
-    setActiveContact(newContact);
-    if (isMobile) setMobileView('chat');
+    setShowAddModal(true)
   }
 
   const handleSelectContact = (contact) => {
     setActiveContact(contact);
+    fetchMessages(contact.id);
     if (isMobile) setMobileView('chat');
   }
 
-  const handleAddContact = (user) => {
-    // Basic check if contact exists
-    if (contacts.find(c => c.id === user.id)) {
-      handleSelectContact(contacts.find(c => c.id === user.id));
-      return;
-    }
-
-    const newContact = {
-      ...user,
-      lastMessage: 'Contact added!',
-      time: 'Just now'
-    };
-    setContacts(prev => [newContact, ...prev]);
-    handleSelectContact(newContact);
-  }
-
-  const handleUploadStory = () => {
-    storyInputRef.current?.click()
-  }
-
-  const handleStoryFileChange = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-
-    const isVideo = file.type.startsWith('video/')
-    if (isVideo) {
-      // Basic 30s check (simulated or via video element)
-      const video = document.createElement('video')
-      video.preload = 'metadata'
-      video.onloadedmetadata = () => {
-        window.URL.revokeObjectURL(video.src)
-        if (video.duration > 30) {
-          alert('Video must be 30 seconds or less')
-          return
-        }
-        processUpload(file, 'video')
+  const handleAddContact = async (user) => {
+    try {
+      const response = await fetch('http://127.0.0.1:3001/contacts/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.id, contactId: user.id })
+      })
+      if (response.ok) {
+        fetchContacts()
+        handleSelectContact(user)
+        setShowAddModal(false)
       }
-      video.src = URL.createObjectURL(file)
-    } else {
-      processUpload(file, 'image')
+    } catch (err) {
+      console.error('Add contact error:', err)
     }
-  }
-
-  const processUpload = async (file, type) => {
-    const reader = new FileReader()
-    reader.onloadend = async () => {
-      try {
-        const response = await fetch('http://127.0.0.1:3001/stories', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: currentUser.username, // Using username as id for simplicity
-            username: currentUser.firstName || currentUser.username,
-            type,
-            url: reader.result
-          })
-        })
-        if (response.ok) {
-          alert('Status uploaded successfully!')
-        }
-      } catch (err) {
-        alert('Failed to upload status')
-      }
-    }
-    reader.readAsDataURL(file)
   }
 
   if (!currentUser) {
@@ -309,13 +431,16 @@ function App() {
     )
   }
 
-  if (showProfile) {
+  if (showSettings) {
     return (
-      <Profile
+      <Settings
         currentUser={currentUser}
         onUpdateProfile={handleUpdateProfile}
+        onUpdateSettings={handleUpdateSettings}
+        onLogout={handleLogout}
         onDeleteAccount={handleDeleteAccount}
-        onBack={() => setShowProfile(false)}
+        onClearChats={handleClearChats}
+        onBack={() => setShowSettings(false)}
       />
     )
   }
@@ -336,58 +461,92 @@ function App() {
         <NavRail
           activeTab={activeTab}
           onTabChange={(tab) => {
-            if (tab === 'settings') setShowProfile(true);
-            else setActiveTab(tab);
+            if (tab === 'settings') setShowSettings(true);
+            else {
+              setActiveTab(tab);
+              if (tab !== 'chats') setActiveContact(null);
+            }
           }}
           currentUser={currentUser}
           onLogout={handleLogout}
+          onProfileClick={() => setSelectedProfileUser(currentUser)}
+          groups={groups}
+          onGroupClick={(group) => {
+            setActiveContact({
+              id: group._id,
+              name: group.name,
+              avatar: group.icon || '👥',
+              isGroup: true,
+              members: group.members
+            });
+            setActiveTab(`group-${group._id}`);
+            fetchMessages(group._id, true);
+          }}
+          onCreateGroup={() => setShowCreateGroupModal(true)}
         />
       )}
 
-      {(!isMobile || mobileView === 'list') && (
-        <Sidebar
-          contacts={contacts}
-          activeContact={activeContact}
-          onSelectContact={handleSelectContact}
-          currentUser={currentUser}
-          onNewChat={() => setShowAddModal(true)}
-          onSelectStory={setSelectedStoryUser}
-          onUploadStory={handleUploadStory}
-          activeTab={activeTab}
-          mutedContacts={mutedContacts}
-          blockedContacts={blockedContacts}
-        />
-      )}
-
-      {(!isMobile || mobileView === 'chat') && (
-        <div className="main-content-wa">
-          {activeContact ? (
-            <ChatWindow
+      {activeTab === 'chats' && (
+        <>
+          {(!isMobile || mobileView === 'list') && (
+            <Sidebar
+              contacts={contacts}
               activeContact={activeContact}
-              messages={messages[activeContact.id] || []}
-              onSendMessage={handleSendMessage}
-              onShowUserProfile={setSelectedProfileUser}
-              onCall={handleCall}
-              onMute={() => handleMute(activeContact.id)}
-              onClearChat={() => handleClearChat(activeContact.id)}
-              onBlock={() => handleBlock(activeContact.id)}
-              onBack={() => setMobileView('list')}
-              isMuted={mutedContacts.includes(activeContact.id)}
-              isBlocked={blockedContacts.includes(activeContact.id)}
-              isMobile={isMobile}
+              onSelectContact={handleSelectContact}
+              currentUser={currentUser}
+              onNewChat={() => setShowAddModal(true)}
+              activeTab={activeTab}
+              mutedContacts={mutedContacts}
+              blockedContacts={blockedContacts}
+              onArchiveChat={handleArchiveChat}
+              onStarChat={handleStarChat}
             />
-          ) : (
-            <div className="empty-wa-view glass">
-              <div className="empty-wa-content">
-                <div className="wa-large-icon">💬</div>
-                <h1>WE TALK</h1>
-                <p>Grow, organise and manage your account.</p>
-                <div className="wa-encryption-footer">
-                  <span>🔒 Your personal messages are end-to-end encrypted</span>
+          )}
+
+          {(!isMobile || mobileView === 'chat') && (
+            <div className="main-content-wa">
+              {activeContact ? (
+                <ChatWindow
+                  activeContact={activeContact}
+                  messages={messages[activeContact.id] || []}
+                  onSendMessage={handleSendMessage}
+                  onShowUserProfile={setSelectedProfileUser}
+                  onCall={handleCall}
+                  onMute={() => handleMute(activeContact.id)}
+                  onClearChat={() => handleClearChat(activeContact.id)}
+                  onBlock={() => handleBlock(activeContact.id)}
+                  onBack={() => setMobileView('list')}
+                  isMuted={mutedContacts.includes(activeContact.id)}
+                  isBlocked={blockedContacts.includes(activeContact.id)}
+                  isMobile={isMobile}
+                  wallpaper={currentUser.settings?.chat?.wallpaper || 'default'}
+                />
+              ) : (
+                <div className="empty-wa-view glass">
+                  <div className="empty-wa-content">
+                    <div className="wa-large-icon">💬</div>
+                    <h1>WE TALK</h1>
+                    <p>Grow, organise and manage your account.</p>
+                    <div className="wa-encryption-footer">
+                      <span>🔒 Your personal messages are end-to-end encrypted</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
+        </>
+      )}
+
+      {activeTab === 'calls' && (
+        <div className="main-content-wa full-width">
+          <Calls currentUser={currentUser} onCall={handleCall} />
+        </div>
+      )}
+
+      {activeTab === 'status' && (
+        <div className="main-content-wa full-width">
+          <Feed currentUser={currentUser} />
         </div>
       )}
 
@@ -397,19 +556,14 @@ function App() {
           onAddContact={handleAddContact}
         />
       )}
-      {selectedStoryUser && (
-        <StoryViewer
-          userStories={selectedStoryUser}
-          onClose={() => setSelectedStoryUser(null)}
+
+      {showCreateGroupModal && (
+        <CreateGroupModal
+          currentUser={currentUser}
+          onClose={() => setShowCreateGroupModal(false)}
+          onCreateGroup={handleCreateGroup}
         />
       )}
-      <input
-        type="file"
-        ref={storyInputRef}
-        style={{ display: 'none' }}
-        accept="image/*,video/*"
-        onChange={handleStoryFileChange}
-      />
     </div>
   )
 }
