@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Background circle (gray) -->
+  <circle cx="100" cy="85" r="65" fill="#9CA3AF"/>
+  
+  <!-- Speech bubble tail -->
+  <polygon points="70,155 85,135 100,155" fill="#9CA3AF"/>
+  
+  <!-- White "W" text -->
+  <text x="100" y="105" font-size="70" font-weight="bold" fill="white" text-anchor="middle" font-family="Arial, sans-serif" dominant-baseline="middle">W</text>
+  
+  <!-- "WETALK" text below -->
+  <text x="100" y="175" font-size="18" font-weight="600" fill="#9CA3AF" text-anchor="middle" font-family="Arial, sans-serif" letter-spacing="2">WETALK</text>
+</svg>
